@@ -3,9 +3,9 @@
   // Function to serialize form elements
   function getFormElements() {
     const elements = [];
-    const inputs = document.querySelectorAll('input, select, textarea');
+    const inputs = Array.from(document.querySelectorAll('input, select, textarea'));
 
-    inputs.filter().forEach(element => {
+    inputs.filter(el => el.type !== 'hidden').forEach(element => {
       const elemData = {
         tag: element.tagName.toLowerCase(),
         type: element.type || null,
@@ -77,3 +77,21 @@
   // Send the form elements to the background script
   chrome.runtime.sendMessage({ action: "sendFormElements", data: formElements });
 })();
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "fillForm") {
+    const data = request.data;
+    console.log(data);
+    // Loop through the data and fill out form fields
+    data.forEach(item => {
+      const element = document.querySelector(item.selector);
+      if (element && element.tagName.toLowerCase() === 'select') {
+        const choice = JSON.parse(item.choice);
+        element.value = choice.value;
+        // Trigger change event if needed
+        const event = new Event('change', { bubbles: true });
+        element.dispatchEvent(event);
+      }
+    });
+  }
+});
