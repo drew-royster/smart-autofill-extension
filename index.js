@@ -67,8 +67,8 @@ app.post('/data', async (req, res) => {
 
   const eventsToFill = await Promise.all(selects.map(async (element) => {
     const response = await ollama.generate({
-      model: 'qwen2.5-coder',
-      prompt: `I am not disabled. I am a white. I am not hispanic. I am a male. I am not a veteran. Given this element, please return the appropriate option in the format {"value":"1","text":"Male"}: ${JSON.stringify(element)}`,
+      model: 'qwen2.5-coder:7b-instruct',
+      prompt: `Here is my personal information: Disabled: no. White: yes. Hispanic: no. Gender: male. Veteran: no. take the provided html options and return the appropriate option in the format {"value":"<value>","text":"<value>"}: ${JSON.stringify(element)}`,
       stream: false,
       format: 'json'
     });
