@@ -5,7 +5,7 @@ import ollama from "ollama";
 import e from "express";
 
 const app = express();
-const port = 3000;
+const port = 3001;
 
 // Middleware to parse JSON
 // Increase the limit to 10MB
@@ -15,7 +15,7 @@ app.use(express.json());
 
 const chooseGenderOption = async (genderSelect) => {
   const response = await ollama.generate({
-    model: 'llama3.1',
+    model: 'codegemma:2b',
     prompt: `Take these options and return the the option which says I'm a male: ${JSON.stringify(genderSelect.options)}`,
     stream: false,
     format: 'json'
@@ -29,7 +29,7 @@ const chooseGenderOption = async (genderSelect) => {
 
 const chooseRaceOption = async (select) => {
   const response = await ollama.generate({
-    model: 'llama3.1',
+    model: 'codegemma:2b',
     prompt: `Take these options and return the the option which says I'm white: ${JSON.stringify(select.options)}`,
     stream: false,
     format: 'json'
@@ -43,7 +43,7 @@ const chooseRaceOption = async (select) => {
 
 const chooseVeteranOption = async (select) => {
   const response = await ollama.generate({
-    model: 'llama3.1',
+    model: 'codegemma:2b',
     prompt: `Take these options and return the the option which says I'm not a veteran: ${JSON.stringify(select.options)}`,
     stream: false,
     format: 'json'
@@ -65,23 +65,19 @@ app.post('/data', async (req, res) => {
   const selects = receivedData.elements.filter(element => element.tag === 'select');
   // const inputs = receivedData.elements.filter(element => element.tag === 'input');
 
-  const eventsToFill = [];
-  // console.log(selects);
-  const selectGender = selects.find(select => select.label.toLowerCase().includes('Gender'.toLowerCase()));
-  if (selectGender) {
-    const genderResponse = await chooseGenderOption(selectGender);
-    eventsToFill.push(genderResponse);
-  }
-  const selectRace = selects.find(select => select.label.toLowerCase().includes('Race'.toLowerCase()));
-  if (selectRace) {
-    const raceResponse = await chooseRaceOption(selectRace);
-    eventsToFill.push(raceResponse);
-  }
-  const selectVeteran = selects.find(select => select.label.toLowerCase().includes('Veteran'.toLowerCase()));
-  if (selectVeteran) {
-    const veteranResponse = await chooseVeteranOption(selectVeteran);
-    eventsToFill.push(veteranResponse);
-  }
+  const eventsToFill = await Promise.all(selects.map(async (element) => {
+    const response = await ollama.generate({
+      model: 'qwen2.5-coder',
+      prompt: `I am not disabled. I am a white. I am not hispanic. I am a male. I am not a veteran. Given this element, please return the appropriate option in the format {"value":"1","text":"Male"}: ${JSON.stringify(element)}`,
+      stream: false,
+      format: 'json'
+    });
+
+    return {
+      selector: element.selector,
+      choice: response.response
+    };
+  }));
   res.send(eventsToFill);
 });
 

@@ -1,7 +1,7 @@
 // background.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "sendFormElements") {
-    fetch("http://localhost:3000/data", {
+    fetch("http://localhost:3001/data", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
