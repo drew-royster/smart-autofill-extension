@@ -1,0 +1,42 @@
+### Send a POST request
+POST http://127.0.0.1:8000/autocompletes/selects
+Content-Type: application/json
+
+{
+  "label": "Race/Ethnicity",
+  "selector": "#race-select",
+  "options": [
+    {
+      "value": "white",
+      "text": "White"
+    },
+    {
+      "value": "black",
+      "text": "Black or African American"
+    },
+    {
+      "value": "latino",
+      "text": "Hispanic or Latino"
+    },
+    {
+      "value": "asian",
+      "text": "Asian"
+    },
+    {
+      "value": "native",
+      "text": "Native American or Alaska Native"
+    },
+    {
+      "value": "hawaiian",
+      "text": "Native Hawaiian or Other Pacific Islander"
+    },
+    {
+      "value": "two",
+      "text": "Two or More Races"
+    },
+    {
+      "value": "other",
+      "text": "Other"
+    }
+  ]
+}

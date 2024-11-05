@@ -3,16 +3,10 @@
   // Function to serialize form elements
   function getFormElements() {
     const elements = [];
-    const inputs = Array.from(document.querySelectorAll('input, select, textarea'));
+    const inputs = Array.from(document.querySelectorAll('select'));
 
     inputs.filter(el => el.type !== 'hidden').forEach(element => {
       const elemData = {
-        tag: element.tagName.toLowerCase(),
-        type: element.type || null,
-        name: element.name || null,
-        id: element.id || null,
-        class: element.className || null,
-        placeholder: element.placeholder || null,
         label: getLabel(element),
         options: null,
         selector: getUniqueSelector(element)
@@ -75,23 +69,21 @@
   const formElements = getFormElements();
 
   // Send the form elements to the background script
-  chrome.runtime.sendMessage({ action: "sendFormElements", data: formElements });
+  formElements.forEach(element => {
+    chrome.runtime.sendMessage({ action: "sendSelect", data: element });
+  })
 })();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "fillForm") {
-    const data = request.data;
-    console.log(data);
+    console.log('in here')
+  if (request.action === "fillSelect") {
+    console.log(request.data)
+    const item = request.data;
     // Loop through the data and fill out form fields
-    data.forEach(item => {
-      const element = document.querySelector(item.selector);
-      if (element && element.tagName.toLowerCase() === 'select') {
-        const choice = JSON.parse(item.choice);
-        element.value = choice.value;
-        // Trigger change event if needed
-        const event = new Event('change', { bubbles: true });
-        element.dispatchEvent(event);
-      }
-    });
+    const element = document.querySelector(item.selector);
+    element.value = item.choice;
+    // Trigger change event if needed
+    const event = new Event('change', { bubbles: true });
+    element.dispatchEvent(event);
   }
 });
