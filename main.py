@@ -19,8 +19,10 @@ class ElemData(BaseModel):
 
 @app.post("/autocompletes/selects")
 async def receive_data(element: ElemData):
+    options = ", ".join([e.value for e in element.options])
+
     response = ollama.chat(
-        model='qwen2.5-coder:7b-instruct',
+        model='llama3.2:3b-instruct-q4_K_M',
         messages=[
             {
                 'role': 'system',
@@ -41,7 +43,7 @@ async def receive_data(element: ElemData):
                 'role': 'user',
                 'content': '''
                     LABEL: Gender
-                    OPTIONS: [{"value": "male", "text": "Male"}, {"value": "female", "text": "Female"}]
+                    OPTIONS: male, female
                     '''
             },
             {
@@ -52,12 +54,7 @@ async def receive_data(element: ElemData):
                 'role': 'user',
                 'content': '''
                     LABEL: Race Ethnicity
-                    OPTIONS: [
-                        {"value": "white", "text": "White"},
-                        {"value": "black", "text": "Black"},
-                        {"value": "asian", "text": "Asian"},
-                        {"value": "hispanic", "text": "Hispanic"}
-                    ]
+                    OPTIONS: white, black, asian, hispanic                   
                     '''
             },
             {
@@ -68,7 +65,65 @@ async def receive_data(element: ElemData):
                 'role': 'user',
                 'content': f'''
                     LABEL: {element.label}
-                    OPTIONS: {element.options}
+                    OPTIONS: {options}
+                    '''
+            }
+        ],
+        stream=False,
+    )
+
+    return {"selector": element.selector, "choice": response['message'].get('content')}
+
+
+@app.post("/autocompletes/radios")
+async def receive_data(element: ElemData):
+    options = ", ".join([e.value for e in element.options])
+
+    response = ollama.chat(
+        model='llama3.2:3b-instruct-q4_K_M',
+        messages=[
+            {
+                'role': 'system',
+                'content': f"""
+                Given a users personal information you will choose the correct option based on a LABEL and OPTIONS.
+                **User Information**
+                - user has never been disabled. disabled: never
+                - user is white. white: yes
+                - user is not hispanic. hispanic: no
+                - user is male. gender: male
+                - user is not veteran. veteran: no
+                - user uses he/him. pronouns: he him
+
+                Respond with the appropriate value only with no extra words.
+                """
+            },
+            {
+                'role': 'user',
+                'content': '''
+                    LABEL: Gender
+                    OPTIONS: male, female
+                    '''
+            },
+            {
+                'role': 'assistant',
+                'content': "male",
+            },
+            {
+                'role': 'user',
+                'content': '''
+                    LABEL: Race Ethnicity
+                    OPTIONS: white, black, asian, hispanic                   
+                    '''
+            },
+            {
+                'role': 'assistant',
+                'content': "white",
+            },
+            {
+                'role': 'user',
+                'content': f'''
+                    LABEL: {element.label}
+                    OPTIONS: {options}
                     '''
             }
         ],
