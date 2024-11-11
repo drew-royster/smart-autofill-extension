@@ -28,22 +28,6 @@
             return elements;
         }
 
-        function findLabelForGroup(radioGroupElement) {
-            if (!radioGroupElement) return null;
-            const label = radioGroupElement.querySelector('label');
-            if (label) {
-                return label; // Direct child label
-            }
-            // Check previous sibling elements for a matching label
-            let sibling = radioGroupElement.previousElementSibling;
-            while (sibling) {
-                if (sibling.tagName.toLowerCase() === 'label') {
-                    return sibling;
-                }
-                sibling = sibling.previousElementSibling;
-            }
-            return null;
-        }
 
         function groupRadioButtonsWithLabels() {
             const radios = document.querySelectorAll('input[type="radio"]');
@@ -55,21 +39,9 @@
                     if (!radioGroups[name]) {
                         radioGroups[name] = {radios: [], label: null, options: []};
                     }
-                    radioGroups[name].radios.push(radio);
-                    radioGroups[name].options.push(radio.value);
-                    radioGroups[name].selector = getUniqueSelector(radio);
+                    radioGroups[name].options.push({value: radio.value, selector: getUniqueSelector(radio)});
                 }
             });
-
-            for (const name in radioGroups) {
-                if (radioGroups[name].radios.length > 0) {
-                    const commonParent = radioGroups[name].radios[0].closest('fieldset') || radios[0].closest('div');
-                    const groupLabel = findLabelForGroup(commonParent);
-                    if (groupLabel) {
-                        radioGroups[name].label = (groupLabel.textContent || groupLabel.innerText);
-                    }
-                }
-            }
 
             return radioGroups;
         }
@@ -100,9 +72,6 @@
             if (element.id) {
                 return `#${element.id}`;
             }
-            if (element.name) {
-                return `[name="${element.name}"]`;
-            }
             const path = [];
             while (element.parentElement) {
                 const index = Array.from(element.parentElement.children).indexOf(element) + 1;
@@ -121,11 +90,9 @@
         })
         for (let name in groupedRadios) {
             chrome.runtime.sendMessage({
-                    action: "sendRadios",
+                    action: "sendRadio",
                     data: {
-                        label: groupedRadios[name].label,
-                        options: groupedRadios[name].options,
-                        selector: groupedRadios[name].selector
+                        options: groupedRadios[name].options
                     }
                 }
             );
@@ -135,13 +102,21 @@
 ();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('in here')
     if (request.action === "fillSelect") {
         console.log(request.data)
         const item = request.data;
         // Loop through the data and fill out form fields
         const element = document.querySelector(item.selector);
         element.value = item.choice;
+        // Trigger change event if needed
+        const event = new Event('change', {bubbles: true});
+        element.dispatchEvent(event);
+    } else if (request.action === "fillRadio") {
+        console.log(request.data)
+        const item = request.data;
+        // Loop through the data and fill out form fields
+        const element = document.querySelector(item.selector);
+        element.checked = true;
         // Trigger change event if needed
         const event = new Event('change', {bubbles: true});
         element.dispatchEvent(event);

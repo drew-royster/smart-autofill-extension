@@ -17,6 +17,14 @@ class ElemData(BaseModel):
     selector: str
 
 
+class RadioOption(BaseModel):
+    value: str
+    selector: str
+
+
+class RadioData(BaseModel):
+    options: Optional[List[RadioOption]] = None
+
 @app.post("/autocompletes/selects")
 async def receive_data(element: ElemData):
     options = ", ".join([e.value for e in element.options])
@@ -76,7 +84,8 @@ async def receive_data(element: ElemData):
 
 
 @app.post("/autocompletes/radios")
-async def receive_data(element: ElemData):
+async def receive_data(element: RadioData):
+    print(element)
     options = ", ".join([e.value for e in element.options])
 
     response = ollama.chat(
@@ -99,10 +108,7 @@ async def receive_data(element: ElemData):
             },
             {
                 'role': 'user',
-                'content': '''
-                    LABEL: Gender
-                    OPTIONS: male, female
-                    '''
+                'content': 'male, female'
             },
             {
                 'role': 'assistant',
@@ -110,10 +116,7 @@ async def receive_data(element: ElemData):
             },
             {
                 'role': 'user',
-                'content': '''
-                    LABEL: Race Ethnicity
-                    OPTIONS: white, black, asian, hispanic                   
-                    '''
+                'content': 'white, black, asian, hispanic'
             },
             {
                 'role': 'assistant',
@@ -121,13 +124,20 @@ async def receive_data(element: ElemData):
             },
             {
                 'role': 'user',
-                'content': f'''
-                    LABEL: {element.label}
-                    OPTIONS: {options}
-                    '''
+                'content': options
             }
         ],
         stream=False,
     )
 
-    return {"selector": element.selector, "choice": response['message'].get('content')}
+    choice = response['message'].get('content')
+    selector = None
+    for option in element.options:
+        if option.value == choice:
+            selector = option.selector
+            break
+
+    if selector is None:
+        raise Exception("No selector found for choice")
+
+    return {"selector": selector, "choice": choice}
